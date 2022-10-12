@@ -76,6 +76,6 @@ if __name__ == "__main__":
     print(args.checkpoint)
     sched = lambda n: decay_schedule(n, 0.99, 1e-2)
 
-    agent = Agent(env.observation_space.shape[0], env.action_space.n, 128, 128, 100000, sched, 1e-3,
+    agent = Agent(env.observation_space.shape[0], env.action_space.n, 64, 64, 100000, sched, 1e-3,
                   0.99, 4, 42, args.checkpoint)
     ddqn_scores = train(agent, env, 3000, 8000)
