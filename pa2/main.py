@@ -8,8 +8,8 @@ The method I wanted to try to implement was Q learning. And then the Double Q me
 disadvantage to Q-learning on its own is that it is not very effective in large state spaces where there can be many
 possible states and multiple actions possible at each move. The reason is that it is not able to infer Q values for new
 states from previous states. So, with Deep Q learning it is possible to use a neural network to approximate Q values to
-make up for that limitation. So, I am implementing the Double Q learning with neural nets to create a Deep Double Q Learning
-to create an agent to play the inverted pendulum.
+make up for that limitation. So, I am implementing the Double Q learning with neural nets to create an agent to play
+the inverted pendulum.
 
 I am also using the OpenGymAI CartPole-v1 simulator as there is plenty of examples and documentation on how to use it.
 But it should be possible to use the agent with any environment model with some tweaks.
@@ -45,8 +45,8 @@ def train(agent, env, target, num_epochs):
 
         avg = sum(recent) / len(recent)
         if avg >= target:
-            print(f"\nEnv solved in {i:d} episodes\t Avg score: {avg}")
-            torch.save({"online_q": agent.online_q.state_dict(), "optim": agent.optimizer.state_dict()}, "trained-q")
+            print(f"\nReached target score in {i:d} episodes\t Avg score: {avg}")
+            torch.save({"online_q": agent.online_q.state_dict(), "target_q": agent.target_q.state_dict(), "optim": agent.optimizer.state_dict()}, "trained-q")
             break
         if (i + 1) % 100 == 0:
             print(f"\rEpisode {i + 1}\tAvg Score: {avg}")
@@ -68,18 +68,15 @@ if __name__ == "__main__":
 
     if args.checkpoint is not None:
         env = gym.make("CartPole-v1", render_mode="human")
-        env.action_space.seed(10)
-        checkpoint = torch.load(args.checkpoint)
+
     else:
         env = gym.make("CartPole-v1")
-        env.action_space.seed(10)
-        checkpoint = None
 
+    env.action_space.seed(10)
 
-    optimizer_function = lambda parameters: optim.Adam(parameters, lr=1e-3, betas=(0.9, 0.999), eps=1e-08,
-                                                       weight_decay=0, amsgrad=False)
+    print(args.checkpoint)
     sched = lambda n: decay_schedule(n, 0.99, 1e-2)
 
-    agent = Agent(env.observation_space.shape[0], env.action_space.n, 64, optimizer_function, 64, 100000, sched, 1e-3,
-                  0.99, 4, 42, checkpoint)
+    agent = Agent(env.observation_space.shape[0], env.action_space.n, 128, 128, 100000, sched, 1e-3,
+                  0.99, 4, 42, args.checkpoint)
     ddqn_scores = train(agent, env, 3000, 8000)

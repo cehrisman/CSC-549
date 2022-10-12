@@ -19,12 +19,14 @@ class Agent:
                  gamma,
                  update_rate,
                  seed,
-                 checkpoint=None):
+                 Args=None):
 
         self.state_size_ = state_size
         self.action_size_ = action_size
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
+        if Args is None:
+            self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        else:
+            self.device = torch.device("cpu")
         if seed is None:
             self.random_state_ = np.random.RandomState()
         else:
@@ -42,14 +44,21 @@ class Agent:
         self.gamma_ = gamma
 
         self.update_rate = update_rate
-        if checkpoint is None:
-            self.online_q = self.initialize_q(num_units)
-            self.optimizer = optimizer(self.online_q.parameters())
-        if checkpoint is not None:
-            self.online_q.load_state_dict(checkpoint['online-q'])
-            self.optimizer.load_state_dict(checkpoint['optim'])
+
+        self.online_q = self.initialize_q(num_units)
+        self.optimizer = optim.Adam(self.online_q.parameters())
         self.target_q = self.initialize_q(num_units)
         self.target_q.load_state_dict(self.online_q.state_dict())
+
+        # if there is a checkpoint file passed in then set online_q and optimizer to checkpoint
+        if Args is not None:
+            checkpoint = torch.load(Args.checkpoint)
+            self.online_q.load_state_dict(checkpoint['online_q'])
+            self.optimizer = optimizer(self.online_q.parameters())
+            self.optimizer.load_state_dict(checkpoint['optim'])
+            self.target_q.load_state_dict(checkpoint['target_q'])
+
+
         self.online_q.to(self.device)
         self.target_q.to(self.device)
 
