@@ -19,6 +19,7 @@ if you want to use the pretrained model there is a saved checkpoint. It is possi
 
 The model is a Double Q-Learning model. It uses the Basic Q-learning model and then expands on the idea. It is 
 based on the Double Q-Learning algorithm by Hasselt. 
+
 ![img.png](img.png)
 
 I have it running 8000 epochs within the CartPole-v1 enviroment. And this generally takes a few hours to do.
