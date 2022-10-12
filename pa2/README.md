@@ -1,4 +1,4 @@
-#Usage
+#Usage#
 
 There is a requirements.txt file to allow for easy addition of the packages used. 
 
@@ -15,7 +15,7 @@ if you want to use the pretrained model there is a saved checkpoint. It is possi
 
 :> py main.py --checkpoint trained-q
 
-##Information
+##Information##
 
 The model is a Double Q-Learning model. It uses the Basic Q-learning model and then expands on the idea. It is 
 based on the Double Q-Learning algorithm by Hasselt. 
