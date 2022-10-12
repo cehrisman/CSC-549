@@ -9,7 +9,7 @@ if they do not work they packages you will need are
 
 It able to be ran from the command line using
 
-py main.py
+:> py main.py
 
 if you want to use the pretrained model there is a saved checkpoint. It is possible to load it by using 
 
