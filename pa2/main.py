@@ -14,9 +14,8 @@ the inverted pendulum.
 I am also using the OpenGymAI CartPole-v1 simulator as there is plenty of examples and documentation on how to use it.
 But it should be possible to use the agent with any environment model with some tweaks.
 
-The way this model is trained is episodic. Since the inverted pendulum starts with the pole upright on the cart there
-should be no real need to learn to pick it up off the ground since if it just learns how to not drop it then it won't
-be an issue.
+The way this model is trained is episodic. If the pole falls too far or if the cart moves to where the center reaches the edges
+it resets.
 
 '''
 import collections
@@ -77,6 +76,6 @@ if __name__ == "__main__":
     print(args.checkpoint)
     sched = lambda n: decay_schedule(n, 0.99, 1e-2)
 
-    agent = Agent(env.observation_space.shape[0], env.action_space.n, 128, 128, 100000, sched, 1e-3,
+    agent = Agent(env.observation_space.shape[0], env.action_space.n, 64, 64, 100000, sched, 1e-3,
                   0.99, 4, 42, args.checkpoint)
     ddqn_scores = train(agent, env, 3000, 8000)

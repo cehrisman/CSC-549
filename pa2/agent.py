@@ -11,7 +11,6 @@ class Agent:
     def __init__(self, state_size,
                  action_size,
                  num_units,
-                 optimizer,
                  batch_size,
                  buffer_size,
                  decay: typing.Callable[[int], float],
