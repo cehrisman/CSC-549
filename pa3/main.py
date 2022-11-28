@@ -26,14 +26,14 @@ import numpy as np
     """
 def parse():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--checkpoint', type=str, help='Specify trained model to start with')
+    parser.add_argument('--render', type=str, help='Specify to run simulation or not')
     return parser.parse_args()
 
 
 if __name__ == "__main__":
     args = parse()
 
-    if args.checkpoint is not None:
+    if args.render == "True":
         env = gym.make("MountainCar-v0", render_mode="human")
 
     else:
@@ -50,7 +50,7 @@ if __name__ == "__main__":
     fig, ax = plt.subplots(figsize=(10, 4))
     ax.set_title("Reward values")
     ax.set(xlim=(0, 1000), xticks=np.arange(0, 1000, 200))
-    pd.Series(rewards).plot(kind='line')
+    pd.Series(np.negative(rewards)).plot(kind='line')
     plt.show()
 
 

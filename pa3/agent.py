@@ -10,7 +10,6 @@ All functions needed by solely the agent are included as member functions of cla
 import numpy as np
 
 DISCOUNT = 0.95
-EPISODE_DISPLAY = 500
 ALPHA = 0.1
 GAMMA = 1
 EPSILON = 0.5
@@ -46,7 +45,7 @@ class Agent:
                 Agent.create_q_table creates the Q table that fits all states
 
 
-                :return None
+                :return np.array of [x_lim][y_lim][num_actions]
         """
         high = self.env.observation_space.high
         low = self.env.observation_space.low
@@ -60,7 +59,7 @@ class Agent:
                 Agent.create_e_table creates the E table that fits all states
 
 
-                :return None
+                :return np.array of [x_lim][y_lim][num_actions]
         """
         high = self.env.observation_space.high
         low = self.env.observation_space.low
@@ -92,9 +91,9 @@ class Agent:
             :param num_epochs
             :return None
             """
-
         for i in range(num_epochs):
             curr_state, _ = env.reset()  # reset environment
+
 
             curr_state = self.discretized_env_state(curr_state)
             action = self.action(curr_state)
@@ -128,15 +127,15 @@ class Agent:
             self.epoch_max_pos.append(max_pos)
             self.epoch_rewards.append(reward_sum)
 
-            if i % EPISODE_DISPLAY:
-                avg_reward = sum(self.epoch_rewards[-EPISODE_DISPLAY:]) / len(self.epoch_rewards[-EPISODE_DISPLAY:])
-                self.epoch_rewards_table['ep'].append(i)
-                self.epoch_rewards_table['avg'].append(avg_reward)
-                self.epoch_rewards_table['min'].append(min(self.epoch_rewards[-EPISODE_DISPLAY:]))
-                self.epoch_rewards_table['max'].append(max(self.epoch_rewards[-EPISODE_DISPLAY:]))
+            # Terminal Output for stats of each epoch
+            avg_reward = sum(self.epoch_rewards[-1:]) / len(self.epoch_rewards[-1:])
+            self.epoch_rewards_table['ep'].append(i)
+            self.epoch_rewards_table['avg'].append(avg_reward)
+            self.epoch_rewards_table['min'].append(min(self.epoch_rewards[-1:]))
+            self.epoch_rewards_table['max'].append(max(self.epoch_rewards[-1:]))
 
-                print(
-                    f"Episode:{i} avg:{avg_reward} min:{min(self.epoch_rewards[-EPISODE_DISPLAY:])} max:{max(self.epoch_rewards[-EPISODE_DISPLAY:])}")
+            print(f"Epoch - {i}\t| avg: {avg_reward:.2f}\t| min: {min(self.epoch_rewards[-1:]):.2f}"
+                  f"\t| max: {max(self.epoch_rewards[-1:]):.2f}")
 
         return self.epoch_rewards, self.epoch_max_pos
 
@@ -170,3 +169,6 @@ class Agent:
         min_states = self.env.observation_space.low
         discrete_state = (state - min_states) * np.array([10, 100])
         return np.round(discrete_state, 0).astype(int)
+
+    def terminal_output(self):
+        pass
