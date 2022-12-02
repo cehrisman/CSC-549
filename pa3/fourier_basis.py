@@ -20,16 +20,7 @@ class FourierBasis:
                     coeff = np.vstack((coeff, coef))
         return coeff
 
-    def get_features(self, state):
+    def get_features(self, state, minimum, maximum):
         # print(np.array(a).shape)
-        np.normalize_axis_index(self.coeff)
-        return np.cos(np.pi * np.dot(self.coeff, state))
-
-    def get_num_basis(self):
-        return len(self.coeff)
-
-    def learning_rate(self, alpha):
-        lr = np.linalg.norm(self.coeff, axis=1)
-        lr[lr == 0.] = 1.
-        lr = alpha/lr
-        return lr
+        norm_state = (state - minimum) / (maximum - minimum)
+        return np.cos(np.pi * np.dot(self.coeff, norm_state))

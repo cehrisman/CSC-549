@@ -34,8 +34,7 @@ class Agent:
         self.epoch_rewards_table = {'ep': [], 'avg': [], 'min': [], 'max': []}
         self.epoch_max_pos = []
         self.order = order
-        self.basis = basis.FourierBasis(self.env.observation_space, self.env.action_space.n, 3)
-        self.lr = basis.FourierBasis.learning_rate(self.basis, self.alpha)
+        self.basis = basis.FourierBasis(self.env.observation_space, self.env.action_space.n, order)
         self.theta = np.zeros([(order + 1) * (order + 1), self.env.action_space.n])
         self.e = np.zeros([(order + 1) * (order + 1), self.env.action_space.n])
         self.q_old = 0
@@ -66,7 +65,7 @@ class Agent:
             action = self.env.action_space.sample()
         else:
             # disc_state = self.discretized_env_state(state)
-            # print(np.dot(phi, self.theta[:, 0]))
+            # print(phi.shape)
             l = np.dot(phi, self.theta[:, 0])
             n = np.dot(phi, self.theta[:, 1])
             r = np.dot(phi, self.theta[:, 2])
@@ -83,14 +82,12 @@ class Agent:
             :return None
             """
         for i in range(num_epochs):
-            curr_state, _ = env.reset()  # reset environment
+            initial_state, _ = env.reset()  # reset environment
             self.e = np.zeros([(self.order + 1) * (self.order + 1), self.env.action_space.n])
             self.q_old = 0
-
-            # print(self.theta.shape)
-            # print(basis.FourierBasis.get_features(self.basis, curr_state))
-            # curr_state = self.discretized_env_state(curr_state)
-            phi = basis.FourierBasis.get_features(self.basis, curr_state)  # initial phi based on initial state
+            space_min = self.env.observation_space.low
+            space_high = self.env.observation_space.high
+            phi = basis.FourierBasis.get_features(self.basis, initial_state, space_min, space_high)  # initial phi based on initial state
             action = self.action(phi)  # initial action
 
             done = False
@@ -101,12 +98,9 @@ class Agent:
             while not done:
                 next_state, reward, done, null, _ = env.step(action)  # Observe the next state
 
-                next_phi = basis.FourierBasis.get_features(self.basis, next_state)
+                next_phi = basis.FourierBasis.get_features(self.basis, next_state, space_min, space_high)
                 next_action = self.action(next_phi)
-
-
-
-                self.update(reward, phi, next_phi)  # Update current state based on future state
+                next_action = self.update(reward, phi, next_phi, next_action, action)  # Update current state based on future state
 
                 # If the environment value state[0] is greater than equal 0.5 then it has reached the terminal state
                 if next_state[0] >= max_pos:
@@ -114,8 +108,7 @@ class Agent:
 
                 action = next_action
                 reward_sum += reward
-                print(reward_sum)
-
+                # print(reward_sum)
             #  Append max position data and reward data for evaluation
             self.epoch_max_pos.append(max_pos)
             self.epoch_rewards.append(reward_sum)
@@ -124,45 +117,38 @@ class Agent:
 
         return self.epoch_rewards, self.epoch_max_pos
 
-    def update(self, reward, phi, next_phi):
+    def update(self, reward, phi, next_phi, action, prev_action):
         """
             Agent.update updates the Q table based on the SARSA algorithm. It also updates the trace table
 
+            :param prev_action:
+            :param action:
             :param next_phi:
             :param phi:
             :param reward
             :return None
         """
-        action = self.action(next_phi)
-        q = np.dot(phi, self.theta)
-        q_dot = np.dot(next_phi, self.theta)
+        q = np.dot(phi, self.theta[:, action])
+        q_dot = np.dot(next_phi, self.theta[:, action])
 
         delta = reward + self.gamma * q_dot - q
-        self.e[:, action] = self.gamma * self.lambda_decay * self.e[:, action] + phi - self.alpha * self.gamma * self.lambda_decay * np.dot(
-            self.e[:, action], phi) * phi
-        print(self.theta[:, action])
+
+        self.e[:, action] = (self.gamma * self.lambda_decay * self.e[:, action]) +  \
+                            (1 - self.alpha * self.gamma * self.lambda_decay * np.dot(self.e[:, action], phi)) * phi
+
         self.theta[:, action] = self.theta[:, action] + self.alpha * (delta + q - self.q_old) * self.e[:, action] - self.alpha * (q - self.q_old) * phi
+
         self.q_old, phi = q_dot, next_phi
 
-    def discretized_env_state(self, state):
-        """
-            Agent.discretized_env_state takes a given state and discretizes the state to use whole numbers instead of
-            integers for easier computations.
-
-            :param state
-            :return discrete_state
-        """
-        min_states = self.env.observation_space.low
-        discrete_state = (state - min_states) * np.array([10, 100])
-        return np.round(discrete_state, 0).astype(int)
+        return action
 
     def terminal_output(self, i):
         # Terminal Output for stats of each epoch
-        avg_reward = sum(self.epoch_rewards[-1:]) / len(self.epoch_rewards[-1:])
+        avg_reward = sum(self.epoch_rewards[-1:])
         self.epoch_rewards_table['ep'].append(i)
         self.epoch_rewards_table['avg'].append(avg_reward)
-        self.epoch_rewards_table['min'].append(min(self.epoch_rewards[-1:]))
-        self.epoch_rewards_table['max'].append(max(self.epoch_rewards[-1:]))
+        self.epoch_rewards_table['min'].append(min(self.epoch_rewards))
+        self.epoch_rewards_table['max'].append(max(self.epoch_rewards))
 
         print(f"Epoch - {i}\t| avg: {avg_reward:.2f}\t| min: {min(self.epoch_rewards[-1:]):.2f}"
               f"\t| max: {max(self.epoch_rewards[-1:]):.2f}")

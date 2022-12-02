@@ -27,6 +27,7 @@ import numpy as np
 def parse():
     parser = argparse.ArgumentParser()
     parser.add_argument('--render', type=str, help='Specify to run simulation or not')
+    parser.add_argument('--order', type=int, help='Choose order for fourier basis')
     return parser.parse_args()
 
 
@@ -38,11 +39,10 @@ if __name__ == "__main__":
 
     else:
         env = gym.make("MountainCar-v0")
-
     env.action_space.seed(1000)
-
+    env._max_episode_steps = 500
     agent = Agent(env)
-    rewards, max_pos = agent.learn(env, 1000)
+    rewards, max_pos = agent.learn(env, 20)
 
     num_completed = sum([1 if m > 0.5 else 0 for m in max_pos])
     print(f'{num_completed} success out of {1000} attempts')
