@@ -39,17 +39,16 @@ if __name__ == "__main__":
 
     else:
         env = gym.make("MountainCar-v0")
-    env.action_space.seed(1000)
-    env._max_episode_steps = 500
+    n = 100
     agent = Agent(env)
-    rewards, max_pos = agent.learn(env, 20)
+    rewards, max_pos = agent.learn(env, n)
 
     num_completed = sum([1 if m > 0.5 else 0 for m in max_pos])
-    print(f'{num_completed} success out of {1000} attempts')
+    print(f'{num_completed} success out of {n} attempts')
 
     fig, ax = plt.subplots(figsize=(10, 4))
     ax.set_title("Reward values")
-    ax.set(xlim=(0, 1000), xticks=np.arange(0, 1000, 200))
+    ax.set(xlim=(0, n), xticks=np.arange(0, n, n/5))
     pd.Series(np.negative(rewards)).plot(kind='line')
     plt.show()
 

@@ -10,7 +10,7 @@ All functions needed by solely the agent are included as member functions of cla
 import numpy as np
 import fourier_basis as basis
 
-ALPHA = 0.001
+ALPHA = 0.0001
 GAMMA = 1
 EPSILON = 0.5
 LAMBDA = 0.9
@@ -38,6 +38,7 @@ class Agent:
         self.theta = np.zeros([(order + 1) * (order + 1), self.env.action_space.n])
         self.e = np.zeros([(order + 1) * (order + 1), self.env.action_space.n])
         self.q_old = 0
+        self.lr = basis.FourierBasis.get_learning_rates(self.basis, self.alpha)
 
     def create_q_table(self):
         """
@@ -100,7 +101,7 @@ class Agent:
 
                 next_phi = basis.FourierBasis.get_features(self.basis, next_state, space_min, space_high)
                 next_action = self.action(next_phi)
-                next_action = self.update(reward, phi, next_phi, next_action, action)  # Update current state based on future state
+                next_action = self.update(reward, phi, next_phi, action, next_action)  # Update current state based on future state
 
                 # If the environment value state[0] is greater than equal 0.5 then it has reached the terminal state
                 if next_state[0] >= max_pos:
@@ -117,7 +118,7 @@ class Agent:
 
         return self.epoch_rewards, self.epoch_max_pos
 
-    def update(self, reward, phi, next_phi, action, prev_action):
+    def update(self, reward, phi, next_phi, action, next_action):
         """
             Agent.update updates the Q table based on the SARSA algorithm. It also updates the trace table
 
@@ -128,16 +129,25 @@ class Agent:
             :param reward
             :return None
         """
-        q = np.dot(phi, self.theta[:, action])
-        q_dot = np.dot(next_phi, self.theta[:, action])
+        q = np.dot(self.theta[:, action], phi)
+
+        q_dot = np.dot(next_phi, self.theta[:, next_action])
 
         delta = reward + self.gamma * q_dot - q
+        # print(delta)
+        for a in range(self.env.action_space.n):
+            if a == action:
+                # self.e[:, action] = (self.gamma * self.lambda_decay * self.e[:, action]) +  \
+                #                   (1 - self.alpha * self.gamma * self.lambda_decay * np.dot(self.e[:, action], phi)) * phi
+                self.e[:, action] = (self.gamma * self.lambda_decay * self.e[:, action]) + phi - \
+                                       (self.lr * self.gamma * self.lambda_decay * (np.dot(self.e[:, action], phi))) * phi
+                self.theta[:, action] += self.lr * (delta + q - self.q_old) * self.e[:, action] - self.lr * (q - self.q_old) * phi
+            else:
+                self.e[:, action] = (self.gamma * self.lambda_decay * self.e[:, action])
+                self.theta[:, action] += self.lr * (delta + q - self.q_old) * self.e[:, action]
 
-        self.e[:, action] = (self.gamma * self.lambda_decay * self.e[:, action]) +  \
-                            (1 - self.alpha * self.gamma * self.lambda_decay * np.dot(self.e[:, action], phi)) * phi
-
-        self.theta[:, action] = self.theta[:, action] + self.alpha * (delta + q - self.q_old) * self.e[:, action] - self.alpha * (q - self.q_old) * phi
-
+        # self.theta = self.theta / np.linalg.norm(self.theta, 1)
+        # self.e = self.e / np.linalg.norm(self.e, 1)
         self.q_old, phi = q_dot, next_phi
 
         return action

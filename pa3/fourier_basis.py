@@ -23,4 +23,10 @@ class FourierBasis:
     def get_features(self, state, minimum, maximum):
         # print(np.array(a).shape)
         norm_state = (state - minimum) / (maximum - minimum)
-        return np.cos(np.pi * np.dot(self.coeff, norm_state))
+        return np.cos(np.dot(np.pi * self.coeff, norm_state))
+
+    def get_learning_rates(self, alpha):
+        lrs = np.linalg.norm(self.coeff, axis=1)
+        lrs[lrs == 0.] = 1.
+        lrs = alpha / lrs
+        return lrs
