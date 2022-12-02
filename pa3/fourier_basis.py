@@ -3,30 +3,32 @@ import itertools
 
 
 class FourierBasis:
-    def __init__(self, state_space, action_space, order, max_non_zero=2):
+    def __init__(self, state_space, order):
         self.order = order
-        self.max_non_zero = min(max_non_zero, state_space.shape[0])
-        self.state_dim = state_space.shape[0]
+        self.state_dim = state_space
+        self.order = [order]*self.state_dim
         self.coeff = self.coefficents()
+        self.gradient_factors = np.array([])
+
+        with np.errstate(divide='ignore', invalid='ignore'):
+            self.gradient_factors = 1.0 / np.linalg.norm(self.coeff, ord=2, axis=1)
+        self.gradient_factors[0] = 1.0
+
 
     def coefficents(self):
-        coeff = np.array(np.zeros(self.state_dim))
+        coeff = [np.zeros([self.state_dim])]
 
-        for i in range(1, self.max_non_zero + 1):
-            for indices in itertools.combinations(range(self.state_dim), i):
-                for c in itertools.product(range(1, self.order + 1), repeat=i):
-                    coef = np.zeros(self.state_dim)
-                    coef[list(indices)] = list(c)
-                    coeff = np.vstack((coeff, coef))
-        return coeff
+        for i in range(0, self.state_dim):
+            for c in range(0, self.order[i]):
+                v = np.zeros(self.state_dim)
+                v[i] = c + 1
+                coeff.append(v)
+        return np.array(coeff)
 
-    def get_features(self, state, minimum, maximum):
+    def get_features(self, state):
         # print(np.array(a).shape)
-        norm_state = (state - minimum) / (maximum - minimum)
-        return np.cos(np.dot(np.pi * self.coeff, norm_state))
+        # norm_state = (state - minimum) / (maximum - minimum)
+        return np.cos(np.pi * np.dot(self.coeff, state))
 
-    def get_learning_rates(self, alpha):
-        lrs = np.linalg.norm(self.coeff, axis=1)
-        lrs[lrs == 0.] = 1.
-        lrs = alpha / lrs
-        return lrs
+    def grad_factors(self):
+        return self.gradient_factors

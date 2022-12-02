@@ -39,8 +39,8 @@ if __name__ == "__main__":
 
     else:
         env = gym.make("MountainCar-v0")
-    n = 100
-    agent = Agent(env)
+    n = 10000
+    agent = Agent(env, order=5)
     rewards, max_pos = agent.learn(env, n)
 
     num_completed = sum([1 if m > 0.5 else 0 for m in max_pos])
