@@ -50,13 +50,11 @@ class Agent:
             """
         for run in range(0, self.runs):
             fb = FourierBasis(state_space=self.env.observation_space.shape[0], order=self.order)
-            learner = SarsaLambdaFA(fa=fb, num_actions=self.num_actions, alpha=0.0001, epsilon=0.1)
+            learner = SarsaLambdaFA(fa=fb, num_actions=self.num_actions, alpha=0.0001, epsilon=0.8)
 
             for i in range(num_epochs):
 
-                if i > np.round(num_epochs * 0.8):
-                    learner.epsilon = 0.0
-
+                learner.epsilon *= .99
                 learner.lambda_weight = np.zeros(learner.theta.shape)
                 state, _ = env.reset()
                 state = (state - env.observation_space.low) / (env.observation_space.high - env.observation_space.low)

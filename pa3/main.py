@@ -28,6 +28,7 @@ def parse():
     parser = argparse.ArgumentParser()
     parser.add_argument('--render', type=str, help='Specify to run simulation or not')
     parser.add_argument('--order', type=int, help='Choose order for fourier basis')
+    parser.add_argument('--num_epochs', type=int, help='Choose numbe of epochs', default=1000)
     return parser.parse_args()
 
 
@@ -39,7 +40,7 @@ if __name__ == "__main__":
 
     else:
         env = gym.make("MountainCar-v0")
-    n = 10000
+    n = args.num_epochs
     agent = Agent(env, order=5)
     rewards, max_pos = agent.learn(env, n)
 
