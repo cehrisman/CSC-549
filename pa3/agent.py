@@ -15,18 +15,17 @@ GAMMA = 1
 EPSILON = 0.5
 LAMBDA = 0.9
 
+
 class Agent:
 
-    def __init__(self, environment):
+    def __init__(self, environment, lambda_dec=0.9, order=3):
         """
                 init is the constructor for the Agent class.
 
                 :param environment
                 :return None
         """
-        self.E_table = None
         self.env = environment
-        self.Q_table = self.create_q_table()
         self.alpha = ALPHA
         self.gamma = GAMMA
         self.epsilon = EPSILON
@@ -34,9 +33,12 @@ class Agent:
         self.epoch_rewards = []
         self.epoch_rewards_table = {'ep': [], 'avg': [], 'min': [], 'max': []}
         self.epoch_max_pos = []
+        self.order = order
         self.basis = basis.FourierBasis(self.env.observation_space, self.env.action_space.n, 3)
         self.lr = basis.FourierBasis.learning_rate(self.basis, self.alpha)
-        self.theta = self.create_q_table()
+        self.theta = np.zeros([(order + 1) * (order + 1), self.env.action_space.n])
+        self.e = np.zeros([(order + 1) * (order + 1), self.env.action_space.n])
+        self.q_old = 0
 
     def create_q_table(self):
         """
@@ -53,33 +55,22 @@ class Agent:
         num_actions = self.env.action_space.n
         return np.zeros([num_states[0], num_states[1], num_actions])
 
-    def create_e_table(self):
-        """
-                Agent.create_e_table creates the E table that fits all states
-
-
-                :return np.array of [x_lim][y_lim][num_actions]
-        """
-        high = self.env.observation_space.high
-        low = self.env.observation_space.low
-        num_states = (high - low) * np.array([10, 100])
-        num_states = np.round(num_states, 0).astype(int) + 1
-        num_actions = self.env.action_space.n
-        return np.zeros([num_states[0], num_states[1], num_actions])
-
-    def action(self, state):
+    def action(self, phi):
         """
                 Agent.action determines what action to take based on state
 
-                :param state
+                :param phi:
                 :return action
         """
         if np.random.uniform(0, 1) < EPSILON:
             action = self.env.action_space.sample()
         else:
             # disc_state = self.discretized_env_state(state)
-
-            action = np.argmax(self.Q_table[state[0], state[1]])
+            # print(np.dot(phi, self.theta[:, 0]))
+            l = np.dot(phi, self.theta[:, 0])
+            n = np.dot(phi, self.theta[:, 1])
+            r = np.dot(phi, self.theta[:, 2])
+            action = np.argmax([l, n, r])
         return action
 
     def learn(self, env, num_epochs):
@@ -93,11 +84,14 @@ class Agent:
             """
         for i in range(num_epochs):
             curr_state, _ = env.reset()  # reset environment
+            self.e = np.zeros([(self.order + 1) * (self.order + 1), self.env.action_space.n])
+            self.q_old = 0
 
-            curr_state = self.discretized_env_state(curr_state)
-            action = self.action(curr_state)
-
-            self.E_table = self.create_q_table()  # Create trace table. Same size as Q table
+            # print(self.theta.shape)
+            # print(basis.FourierBasis.get_features(self.basis, curr_state))
+            # curr_state = self.discretized_env_state(curr_state)
+            phi = basis.FourierBasis.get_features(self.basis, curr_state)  # initial phi based on initial state
+            action = self.action(phi)  # initial action
 
             done = False
             max_pos = -99
@@ -106,22 +100,21 @@ class Agent:
             # While not finished with episode - continue
             while not done:
                 next_state, reward, done, null, _ = env.step(action)  # Observe the next state
-                next_state = self.discretized_env_state(next_state)
-                next_action = self.action(next_state)
-                phi = basis.FourierBasis.get_features(self.basis, curr_state)
+
                 next_phi = basis.FourierBasis.get_features(self.basis, next_state)
-                self.update(curr_state, action, reward, next_state,
-                            next_action, phi, next_phi)  # Update current state based on future state
+                next_action = self.action(next_phi)
+
+
+
+                self.update(reward, phi, next_phi)  # Update current state based on future state
 
                 # If the environment value state[0] is greater than equal 0.5 then it has reached the terminal state
                 if next_state[0] >= max_pos:
                     max_pos = next_state[0]
 
-                self.E_table *= self.gamma * self.lambda_decay
-
-                curr_state = next_state
                 action = next_action
                 reward_sum += reward
+                print(reward_sum)
 
             #  Append max position data and reward data for evaluation
             self.epoch_max_pos.append(max_pos)
@@ -131,39 +124,25 @@ class Agent:
 
         return self.epoch_rewards, self.epoch_max_pos
 
-    def update(self, state, action, reward, next_state, next_action, phi, next_phi):
+    def update(self, reward, phi, next_phi):
         """
             Agent.update updates the Q table based on the SARSA algorithm. It also updates the trace table
 
-            :param state
-            :param action
+            :param next_phi:
+            :param phi:
             :param reward
-            :param next_state
-            :param next_action
             :return None
         """
+        action = self.action(next_phi)
+        q = np.dot(phi, self.theta)
+        q_dot = np.dot(next_phi, self.theta)
 
-        error = reward + self.gamma * self.Q_table[next_state[0], next_state[1], next_action] - self.Q_table[state[0], state[1], action]
-        # print(self.E_table[state[0], state[1], action])
-        # self.E_table[state[0], state[1], action] += 1
-
-        q_next = self.Q_table[next_state[0], next_state[1], next_action]
-        q = self.Q_table[state[0], state[1], action]
-
-        for a in range(self.env.action_space.n):
-            if a == action:
-                self.E_table[state[0], state[1], a] = self.lambda_decay * self.gamma * self.E_table[state[0], state[1], a]
-                + phi - (self.lr * self.gamma*self.lambda_decay*np.dot(self.E_table[state[0], state[1], a], phi))*phi
-                print(self.theta[state[0], :, a].shape)
-                self.theta[state[0], :, a] += self.lr * (error + q_next - q) * self.E_table[state[0], :, a] - \
-                                                     self.lr * (q_next - q)*phi
-            else:
-                self.E_table[state[0], state[1], a] = self.lambda_decay * self.gamma * self.E_table[
-                    state[0], state[1], a]
-
-                self.theta[state[0], state[1], a] += self.lr * (error + q_next - q) * self.E_table[state[0], state[1], a]
-
-        self.Q_table += 0.01 * error * self.E_table
+        delta = reward + self.gamma * q_dot - q
+        self.e[:, action] = self.gamma * self.lambda_decay * self.e[:, action] + phi - self.alpha * self.gamma * self.lambda_decay * np.dot(
+            self.e[:, action], phi) * phi
+        print(self.theta[:, action])
+        self.theta[:, action] = self.theta[:, action] + self.alpha * (delta + q - self.q_old) * self.e[:, action] - self.alpha * (q - self.q_old) * phi
+        self.q_old, phi = q_dot, next_phi
 
     def discretized_env_state(self, state):
         """

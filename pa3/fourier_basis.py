@@ -21,9 +21,9 @@ class FourierBasis:
         return coeff
 
     def get_features(self, state):
-        a = np.cos(np.dot(np.pi * self.coeff, state))
-        print(np.array(a).shape)
-        return np.cos(np.dot(np.pi * self.coeff, state))
+        # print(np.array(a).shape)
+        np.normalize_axis_index(self.coeff)
+        return np.cos(np.pi * np.dot(self.coeff, state))
 
     def get_num_basis(self):
         return len(self.coeff)
