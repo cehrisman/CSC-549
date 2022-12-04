@@ -12,6 +12,8 @@ Tasks
 '''
 
 import gym
+import matplotlib
+
 from agent import Agent
 import argparse
 import pandas as pd
@@ -24,11 +26,18 @@ import numpy as np
     
     :return: a list of all parsed arguments
     """
+
+
 def parse():
     parser = argparse.ArgumentParser()
     parser.add_argument('--render', type=str, help='Specify to run simulation or not')
-    parser.add_argument('--order', type=int, help='Choose order for fourier basis')
-    parser.add_argument('--num_epochs', type=int, help='Choose numbe of epochs', default=1000)
+    parser.add_argument('--order', type=int, help='Choose order for fourier basis', default=3)
+    parser.add_argument('--num_epochs', type=int, help='Choose number of epochs', default=1000)
+    parser.add_argument('--fourier', type=str, help='Choose to use fourier', default=True)
+    parser.add_argument('--file', type=str,
+                        help='File path to save weights to. Must be given with .npy extension', default='weights.npy')
+    parser.add_argument('--train', type=str, help='Choose if training or running', default='True')
+    parser.add_argument('--eval', type=str, default='False')
     return parser.parse_args()
 
 
@@ -40,18 +49,75 @@ if __name__ == "__main__":
 
     else:
         env = gym.make("MountainCar-v0")
+
+    file = args.file
+
     n = args.num_epochs
-    agent = Agent(env, order=5)
-    rewards, max_pos = agent.learn(env, n)
+    if args.fourier == 'False':
+        agent = Agent(env, file, fourier=False, order=3)
+    else:
+        agent = Agent(env, file, order=3)
 
-    num_completed = sum([1 if m > 0.5 else 0 for m in max_pos])
-    print(f'{num_completed} success out of {n} attempts')
+    if args.eval == 'False':
+        if args.train == 'True':
+            rewards, avg, learner = agent.learn(n)
+        else:
+            rewards, avg, learner = agent.run(n)
 
-    fig, ax = plt.subplots(figsize=(10, 4))
-    ax.set_title("Reward values")
-    ax.set(xlim=(0, n), xticks=np.arange(0, n, n/5))
-    pd.Series(np.negative(rewards)).plot(kind='line')
-    plt.show()
+        fig, ax = plt.subplots(figsize=(10, 4))
+        plt.plot(np.negative(rewards), label='Episode Reward')
+        plt.plot(np.negative(avg), label='Running Average')
+        ax.set_title("Reward values")
+        plt.legend()
+        plt.show()
+
+    else:
+        rewards = []
+        base = [3, 5, 7]
+        learner = []
+        for i in range(len(base)):
+            agent = Agent(env, file, order=base[i])
+            reward, avg, temp_learner = agent.learn(1000)
+            rewards.append(avg)
+            learner.append(temp_learner)
+
+        fig, ax = plt.subplots(figsize=(10, 4))
+        plt.plot(np.negative(rewards[0]), label='Base 3')
+        plt.plot(np.negative(rewards[1]), label='Base 5')
+        plt.plot(np.negative(rewards[2]), label='Base 7')
+        ax.set_title("Reward values")
+        plt.legend()
+        plt.show()
+
+        low = env.observation_space.low
+        high = env.observation_space.high
+        difference = high - low
+
+        x_axis = np.linspace(low[0], high[0])
+        y_axis = np.linspace(low[1], high[1])
+        x_axis, y_axis = np.meshgrid(x_axis, y_axis)
+        z_axis = np.zeros(x_axis.shape)
+
+        basis = [3, 5, 7]
+
+        for base in range(len(basis)):
+            for i in range(0, z_axis.shape[0]):
+                for j in range(0, z_axis.shape[1]):
+                    s = [(x_axis[i, j] - low[0]) / (high[0] - low[0]), (y_axis[i, j] - low[1]) / (high[1] - low[1])]
+                    (zq, _) = learner[base].best_action(s)
+                    z_axis[i, j] = -1.0 * zq
+
+            fig = plt.figure()
+            ax = plt.axes(projection='3d')
+            ax.plot_surface(x_axis, y_axis, z_axis, cmap=matplotlib.cm.get_cmap("magma"), linewidth=0, antialiased=False)
+            ax.view_init(elev=45, azim=45)
+            ax.set_xlabel('position')
+            ax.set_ylabel('velocity')
+            ax.view_init(elev=45, azim=45)
+            ax.set_title('Cost Function for Order - ' + str(basis[base]))
+            plt.show()
+
+
 
 
 

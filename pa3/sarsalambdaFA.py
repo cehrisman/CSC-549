@@ -1,3 +1,10 @@
+'''
+Author: Caleb Ehrisman
+Course- Advanced AI CSC-549
+Assignment - Programming Assignment #3 - Mountain Car
+This file contains the code to implement the SARSA(lambda) algorithm.
+All functions needed by solely the agent are included as member functions of class Agent
+'''
 import numpy as np
 import random
 import math
@@ -10,17 +17,16 @@ class SarsaLambdaFA:
         self.lamb = lamb
         self.epsilon = epsilon
         self.alpha = alpha
-
         self.num_actions = num_actions
-        self.fa = []
+        self.fourier_basis = []
 
         for i in range(0, self.num_actions):
-            self.fa.append(copy.deepcopy(fa))
+            self.fourier_basis.append(copy.deepcopy(fa))
 
-        self.theta = np.zeros([self.fa[0].coeff.shape[0], num_actions])
-        self.lambda_weight = np.zeros(self.theta.shape)
+        self.w = np.zeros([self.fourier_basis[0].coeff.shape[0], num_actions])
+        self.z = np.zeros(self.w.shape)
 
-        self.theta[0, :] = 0.0
+        self.w[0, :] = 0.0
 
     def action(self, state):
         """
@@ -32,7 +38,7 @@ class SarsaLambdaFA:
         if np.random.uniform(0, 1) < self.epsilon:
             return random.randrange(0, self.num_actions)
 
-        best = float("-inf")
+        best = float(-math.inf)
         best_actions = []
         for a in range(0, self.num_actions):
             q = self.Q(state, a)
@@ -45,11 +51,11 @@ class SarsaLambdaFA:
         return random.choice(best_actions)
 
     def Q(self, state, action):
-        return np.dot(self.theta[:, action], self.fa[action].get_features(state))
+        return np.dot(self.w[:, action], self.fourier_basis[action].get_features(state))
 
-    def max_Q(self, state):
+    def best_action(self, state):
 
-        best = float("-inf")
+        best = float(-math.inf)
         best_action = 0
         for a in range(0, self.num_actions):
             q = self.Q(state, a)
@@ -58,34 +64,34 @@ class SarsaLambdaFA:
                 best_action = a
         return best, best_action
 
-    def update(self, state, action, reward, next_state, next_action=None, terminal=False):
+    def update(self, state, action, reward, next_state, done, next_action=None):
         """
             Agent.update updates the Q table based on the SARSA algorithm. It also updates the trace table
 
-            :param prev_action:
+            :param next_action:
+            :param done:
+            :param next_state:
+            :param state:
             :param action:
-            :param next_phi:
-            :param phi:
             :param reward
             :return None
         """
 
         delta = reward - self.Q(state, action)
 
-        if not terminal:
+        if not done:
             if next_action is not None:
                 delta += self.gamma * self.Q(next_state, next_action)
             else:
-                q_dot, next_action = self.max_Q(next_state)
-                delta += self.gamma * self.max_Q(q_dot)
+                q_dot, next_action = self.best_action(next_state)
+                delta += self.gamma * self.best_action(q_dot)
 
-        phi = self.fa[action].get_features(state)
-        phi_dot = self.fa[next_action].get_features(next_state)
+        phi = self.fourier_basis[action].get_features(state)
 
         for a in range(0, self.num_actions):
-            self.lambda_weight[:, a] *= self.gamma * self.lamb
+            self.z[:, a] *= self.gamma * self.lamb
             if a == action:
-                self.lambda_weight[:, a] += phi
-            self.theta[:, a] += self.alpha * delta * self.lambda_weight[:, a]
+                self.z[:, a] += phi
+            self.w[:, a] += self.alpha * delta * np.multiply(self.fourier_basis[a].gradient_factors, self.z[:, a])
 
         return delta

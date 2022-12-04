@@ -1,3 +1,10 @@
+'''
+Author: Caleb Ehrisman
+Course- Advanced AI CSC-549
+Assignment - Programming Assignment #3 - Mountain Car
+This file contains the code to implement the SARSA(lambda) algorithm.
+All functions needed by solely the agent are included as member functions of class Agent
+'''
 import numpy as np
 import itertools
 
@@ -7,15 +14,19 @@ class FourierBasis:
         self.order = order
         self.state_dim = state_space
         self.order = [order]*self.state_dim
-        self.coeff = self.coefficents()
+        self.coeff = self.coefficients()
         self.gradient_factors = np.array([])
 
         with np.errstate(divide='ignore', invalid='ignore'):
             self.gradient_factors = 1.0 / np.linalg.norm(self.coeff, ord=2, axis=1)
-        self.gradient_factors[0] = 1.0
+        self.gradient_factors[0] = 1.0  # Overwrite division by zero for function with all-zero coefficients.
 
+    def coefficients(self):
+        """
+            FourierBasis.coefficients creates the coeffs for the FourierBasis
 
-    def coefficents(self):
+            :return np.array(coeff)
+        """
         coeff = [np.zeros([self.state_dim])]
 
         for i in range(0, self.state_dim):
@@ -26,9 +37,12 @@ class FourierBasis:
         return np.array(coeff)
 
     def get_features(self, state):
-        # print(np.array(a).shape)
-        # norm_state = (state - minimum) / (maximum - minimum)
+        """
+            FourierBasis.get_features gets the feature vector. Usually noted as x in SARSA(LAMBDA)
+
+            :param state
+
+            :return feature_vector
+        """
         return np.cos(np.pi * np.dot(self.coeff, state))
 
-    def grad_factors(self):
-        return self.gradient_factors
