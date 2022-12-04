@@ -66,14 +66,16 @@ class Agent:
                 else:
                     state = learner.discretized_env_state(state)
                     learner.E_table = learner.create_q_table()
-
+                # steps = 0
                 action = learner.action(state)
                 done = False
                 reward_sum = 0
 
                 while not done:
                     next_state, reward, done, info, _ = self.env.step(action)
-
+                   # reward += 1
+                   # if done:
+                   #     reward = 100
                     if self.fourier:
                         next_state = (next_state - self.env.observation_space.low) / (
                                     self.env.observation_space.high - self.env.observation_space.low)
@@ -84,6 +86,7 @@ class Agent:
 
                     learner.update(state, action, reward, next_state, done, next_action)
 
+                    # steps += 1
                     state = next_state
                     action = next_action
                     reward_sum += reward
@@ -125,7 +128,7 @@ class Agent:
 
             while not done:
                 next_state, reward, done, info, _ = self.env.step(action)
-
+                print(reward)
                 next_state = (next_state - self.env.observation_space.low) / (
                         self.env.observation_space.high - self.env.observation_space.low)
 

@@ -62,7 +62,7 @@ if __name__ == "__main__":
         if args.train == 'True':
             rewards, avg, learner = agent.learn(n)
         else:
-            rewards, avg, learner = agent.run(n)
+            rewards, avg = agent.run(n)
 
         fig, ax = plt.subplots(figsize=(10, 4))
         plt.plot(np.negative(rewards), label='Episode Reward')
@@ -71,11 +71,47 @@ if __name__ == "__main__":
         plt.legend()
         plt.show()
 
+        rewards = []
+        base = [3, 5, ]
+
+        rewards.append(avg)
+
+        fig, ax = plt.subplots(figsize=(10, 4))
+        plt.plot(np.negative(rewards[0]), label='Base 3')
+        plt.plot(np.negative(rewards[1]), label='Base 5')
+        plt.plot(np.negative(rewards[2]), label='Base 7')
+        ax.set_title("Reward values")
+        plt.legend()
+        plt.show()
+
+        low = env.observation_space.low
+        high = env.observation_space.high
+        difference = high - low
+
+        x_axis = np.linspace(low[0], high[0])
+        y_axis = np.linspace(low[1], high[1])
+        x_axis, y_axis = np.meshgrid(x_axis, y_axis)
+        z_axis = np.zeros(x_axis.shape)
+
+        for i in range(0, z_axis.shape[0]):
+            for j in range(0, z_axis.shape[1]):
+                s = [(x_axis[i, j] - low[0]) / (high[0] - low[0]), (y_axis[i, j] - low[1]) / (high[1] - low[1])]
+                (zq, _) = learner.best_action(s)
+                z_axis[i, j] = -1.0 * zq
+
+            fig = plt.figure()
+            ax = plt.axes(projection='3d')
+            ax.plot_surface(x_axis, y_axis, z_axis, cmap=matplotlib.cm.get_cmap("magma"))
+            ax.set_xlabel('position')
+            ax.set_ylabel('velocity')
+            ax.set_title('Cost Function for Order - ' + str(n))
+            plt.show()
+
     else:
         rewards = []
         base = [3, 5, 7]
         learner = []
-        for i in range(len(base)):
+        for i in range(3):
             agent = Agent(env, file, order=base[i])
             reward, avg, temp_learner = agent.learn(1000)
             rewards.append(avg)
@@ -98,23 +134,19 @@ if __name__ == "__main__":
         x_axis, y_axis = np.meshgrid(x_axis, y_axis)
         z_axis = np.zeros(x_axis.shape)
 
-        basis = [3, 5, 7]
-
-        for base in range(len(basis)):
+        for b in range(3):
             for i in range(0, z_axis.shape[0]):
                 for j in range(0, z_axis.shape[1]):
                     s = [(x_axis[i, j] - low[0]) / (high[0] - low[0]), (y_axis[i, j] - low[1]) / (high[1] - low[1])]
-                    (zq, _) = learner[base].best_action(s)
+                    (zq, _) = learner[b].best_action(s)
                     z_axis[i, j] = -1.0 * zq
 
             fig = plt.figure()
             ax = plt.axes(projection='3d')
-            ax.plot_surface(x_axis, y_axis, z_axis, cmap=matplotlib.cm.get_cmap("magma"), linewidth=0, antialiased=False)
-            ax.view_init(elev=45, azim=45)
+            ax.plot_surface(x_axis, y_axis, z_axis, cmap=matplotlib.cm.get_cmap("magma"))
             ax.set_xlabel('position')
             ax.set_ylabel('velocity')
-            ax.view_init(elev=45, azim=45)
-            ax.set_title('Cost Function for Order - ' + str(basis[base]))
+            ax.set_title('Cost Function for Order - ' + str(base[b]))
             plt.show()
 
 

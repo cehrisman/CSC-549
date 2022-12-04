@@ -1,10 +1,3 @@
-'''
-Author: Caleb Ehrisman
-Course- Advanced AI CSC-549
-Assignment - Programming Assignment #3 - Mountain Car
-This file contains the code to implement the SARSA(lambda) algorithm.
-All functions needed by solely the agent are included as member functions of class Agent
-'''
 import numpy as np
 import random
 import math
@@ -38,7 +31,7 @@ class SarsaLambdaFA:
         if np.random.uniform(0, 1) < self.epsilon:
             return random.randrange(0, self.num_actions)
 
-        best = float(-math.inf)
+        best = -math.inf
         best_actions = []
         for a in range(0, self.num_actions):
             q = self.Q(state, a)
@@ -55,7 +48,7 @@ class SarsaLambdaFA:
 
     def best_action(self, state):
 
-        best = float(-math.inf)
+        best = -math.inf
         best_action = 0
         for a in range(0, self.num_actions):
             q = self.Q(state, a)
@@ -92,6 +85,6 @@ class SarsaLambdaFA:
             self.z[:, a] *= self.gamma * self.lamb
             if a == action:
                 self.z[:, a] += phi
-            self.w[:, a] += self.alpha * delta * np.multiply(self.fourier_basis[a].gradient_factors, self.z[:, a])
+            self.w[:, a] += self.alpha * delta * self.z[:, a]
 
         return delta
