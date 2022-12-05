@@ -71,18 +71,7 @@ if __name__ == "__main__":
         plt.legend()
         plt.show()
 
-        rewards = []
-        base = [3, 5, ]
-
         rewards.append(avg)
-
-        fig, ax = plt.subplots(figsize=(10, 4))
-        plt.plot(np.negative(rewards[0]), label='Base 3')
-        plt.plot(np.negative(rewards[1]), label='Base 5')
-        plt.plot(np.negative(rewards[2]), label='Base 7')
-        ax.set_title("Reward values")
-        plt.legend()
-        plt.show()
 
         low = env.observation_space.low
         high = env.observation_space.high
@@ -99,13 +88,13 @@ if __name__ == "__main__":
                 (zq, _) = learner.best_action(s)
                 z_axis[i, j] = -1.0 * zq
 
-            fig = plt.figure()
-            ax = plt.axes(projection='3d')
-            ax.plot_surface(x_axis, y_axis, z_axis, cmap=matplotlib.cm.get_cmap("magma"))
-            ax.set_xlabel('position')
-            ax.set_ylabel('velocity')
-            ax.set_title('Cost Function for Order - ' + str(n))
-            plt.show()
+        fig = plt.figure()
+        ax = plt.axes(projection='3d')
+        ax.plot_surface(x_axis, y_axis, z_axis, cmap=matplotlib.cm.get_cmap("magma"))
+        ax.set_xlabel('position')
+        ax.set_ylabel('velocity')
+        ax.set_title('Cost Function for Order - ' + str(args.order))
+        plt.show()
 
     else:
         rewards = []
