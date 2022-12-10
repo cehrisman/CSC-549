@@ -1,5 +1,5 @@
 """
-    CSC 548 Programming Assignment 1
+    CSC 549 Programming Assignment 1
     Author: Caleb Ehrisman
 
     0   1   2   3
@@ -41,6 +41,8 @@ valueMap = np.zeros((SIZE, SIZE))
 Author: Caleb Ehrisman
 Rewards and edge case handling for future states. 
 '''
+
+
 def reward_policy():
     nextState = []
     actionReward = []
@@ -93,6 +95,8 @@ deterministic solutions there are by this functions output. This does allow for 
 possible moves from each state that result in the same overall reward score. 
 
 '''
+
+
 def policy_stochastic(gamma, valueMap):
     env = valueMap
 
@@ -108,11 +112,8 @@ def policy_stochastic(gamma, valueMap):
                 newEnv[i][j] = np.max(Vs)
 
         if np.sum(np.abs(env - newEnv)) < 0.0004:
-            print("Optimal Policy")
+            print("Optimal Stochastic Policy")
             print(newEnv)
-            show_board(np.round(newEnv.reshape(SIZE, SIZE), decimals=3))
-            plt.title('Stochastic Value Map')
-            plt.close()
 
             newEnv.reshape(SIZE, SIZE)
             draw_policy(newEnv.reshape(SIZE, SIZE))
@@ -129,6 +130,8 @@ Author: Caleb Ehrisman
 For the this policy Dr. Pyeatt mentioned using a linear system of equations and solving for the unknowns. 
 So that is what is being done here. This results in a policy map that there is one best move per state.
 '''
+
+
 def deterministic_policy():
     identity = np.zeros((SIZE * SIZE, SIZE * SIZE))
     np.fill_diagonal(identity, 1)
@@ -152,46 +155,23 @@ def deterministic_policy():
     print("Optimal Deterministic Policy")
     x = np.round(x.reshape(SIZE, SIZE), decimals=3)
     print(x)
-    show_board(np.round(x.reshape(SIZE, SIZE), decimals=3))
-    plt.savefig('determinValueMap.png')
-    plt.close()
 
     x.reshape(SIZE, SIZE)
     draw_policy(x.reshape(SIZE, SIZE))
     plt.savefig('determinPolicy.png')
     plt.close()
 
-'''
-Author: Caleb Ehrisman
-
-Plots the booard
- 
-'''
-def show_board(board):
-    fig, axis = plt.subplots()
-    axis.set_axis_off()
-    tab = Table(axis, bbox=[0, 0, 1, 1])
-
-    row, cols = board.shape
-    width, height = 1 / cols, 1 / row
-
-    for (i, j), val in np.ndenumerate(board):
-        tab.add_cell(i, j, width, height, text=val, loc='center', facecolor='white')
-
-    for i in range(len(board)):
-        tab.add_cell(i, -1, width, height, text=i + 1, loc='right', edgecolor='none', facecolor='none')
-
-        tab.add_cell(-1, i, width, height / 2, text=i + 1, loc='center', edgecolor='none', facecolor='none')
-
-    axis.add_table(tab)
-
 
 '''
 Author: Caleb Ehrisman
 
-Draws the arrows in the grid based on the policy created. 
+https://github.com/ShangtongZhang/reinforcement-learning-an-introduction/blob/master/chapter03/grid_world.py 
+
+Above link from github repo found in slides. Base Code to draw the policy map nicely. 
 
 '''
+
+
 def draw_policy(policy):
     fig, axis = plt.subplots()
     axis.set_axis_off()
@@ -222,36 +202,25 @@ def draw_policy(policy):
 
     axis.add_table(tab)
 
+'''
+Author: Caleb Ehrisman
 
+Shows the Policy Maps using pyplot.imshow
+
+'''
 def show_pictures():
-    fig = plt.figure()
-    rows = 2
-    columns = 2
     # reading images
-    Image1 = plt.imread('determinValueMap.png')
-    Image2 = plt.imread('determinPolicy.png')
-    Image3 = plt.imread('stochasticValueMap.png')
-    Image4 = plt.imread('stochasticPolicy.png')
+    Image1 = plt.imread('determinPolicy.png')
+    Image2 = plt.imread('stochasticPolicy.png')
 
     # showing image
     plt.imshow(Image1)
-    plt.axis('off')
-    plt.title("Deterministic Value Map")
-    plt.show()
-
-    # showing image
-    plt.imshow(Image2)
     plt.axis('off')
     plt.title("Deterministic Policy Map")
     plt.show()
 
     # showing image
-    plt.imshow(Image3)
-    plt.axis('off')
-    plt.title('Stochastic value map')
-    plt.show()
-    # showing image
-    plt.imshow(Image4)
+    plt.imshow(Image2)
     plt.axis('off')
     plt.title("Stochastic Policy Map")
 
@@ -262,9 +231,7 @@ if __name__ == '__main__':
     policy_stochastic(GAMMA_DISCOUNT, valueMap)
     deterministic_policy()
     print("Going by the stochastic policy map you can see there is multiple squares" +
-          " that have more than one optional action.\nBy doing 1x2x2x1..1x1x1x2 we can "+
+          " that have more than one optional action.\nBy doing 1x2x2x1..1x1x1x2 we can " +
           "determine the number of deterministic polices possible. \nFor this grid enviroment" +
           " there are 128 polices.")
     show_pictures()
-
-
