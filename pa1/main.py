@@ -1,7 +1,6 @@
 """
     CSC 548 Programming Assignment 1
     Author: Caleb Ehrisman
-    Sherwyn Braganza helped me with the image creation functions. So credit to him for those
 
     0   1   2   3
     4   5   6   7
@@ -165,7 +164,7 @@ def deterministic_policy():
 '''
 Author: Caleb Ehrisman
 
-Credits to Sherwyn for sharing the base code for this pyplot function. 
+Plots the booard
  
 '''
 def show_board(board):
@@ -190,7 +189,7 @@ def show_board(board):
 '''
 Author: Caleb Ehrisman
 
-Credits to Sherwyn for sharing the base code for this pyplot function. 
+Draws the arrows in the grid based on the policy created. 
 
 '''
 def draw_policy(policy):
