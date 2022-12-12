@@ -21,7 +21,7 @@ LAMBDA = 0.9
 
 class Agent:
 
-    def __init__(self, environment, file, fourier=True, order=3, runs=1, gamma=0.001):
+    def __init__(self, environment, file, fourier=True, order=3, runs=1, gamma=0.99):
         """
                 init is the constructor for the Agent class.
 
